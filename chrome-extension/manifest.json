@@ -1,0 +1,29 @@
+{
+    "manifest_version": 3,
+    "name": "M3U8 Extractor",
+    "version": "1.0",
+    "description": "Estrazione dei file M3U8 dalle pagine web visitate",
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "permissions": [
+        "tabs",
+        "webRequest",
+        "webRequestBlocking",
+        "storage",
+        "activeTab",
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "content_scripts": [
+        {
+          "matches": ["<all_urls>"],
+          "js": ["content.js"]
+        }
+      ]
+}

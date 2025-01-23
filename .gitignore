@@ -1,0 +1,10 @@
+/target
+generated
+examples
+*.pem
+*.crx
+.venv
+*.sqlite3
+migrations
+.env
+__pycache__
