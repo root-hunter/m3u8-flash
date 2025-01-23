@@ -1,0 +1,6 @@
+{
+    "rust-analyzer.files.excludeDirs": [
+        "server/**",
+        "chrome-extension/**",
+    ]
+}

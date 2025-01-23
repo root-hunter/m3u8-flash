@@ -1,5 +1,5 @@
 use serde_json;
-use m3u8_flash::m3u8::library::Library;
+use m3u8_flash::m3u8::playlist::Playlist;
 use std::sync::Arc;
 use std::{fs::File, thread};
 use std::io::Write;
@@ -73,7 +73,7 @@ async fn main() {
                         let tx_clone = tx.clone();
 
                         thread::spawn(move || {
-                            let mut library = Library::new(url_clone.to_string());
+                            let mut library = Playlist::new(url_clone.to_string());
                             library.scan().unwrap();
                             let payload = serde_json::to_string_pretty(&library).unwrap();
                             //println!("{:?}", library);

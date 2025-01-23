@@ -1,7 +1,10 @@
 from django.db import models
 
 class Playlist(models.Model):
-    pass
+    url = models.URLField()
+    site_url = models.URLField()
+
+    name = models.CharField()
 
 class Stream(models.Model):
     pass

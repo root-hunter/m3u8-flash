@@ -1,6 +1,6 @@
 pub mod m3u8 {
-    pub mod library;
     pub mod playlist;
+    pub mod stream;
     pub mod segment;
     pub mod media;
 }
