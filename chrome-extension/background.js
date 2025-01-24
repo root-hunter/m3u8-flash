@@ -43,6 +43,7 @@ chrome.webRequest.onCompleted.addListener(
                         const file = decoder.decode(data);
 
                         if (file.includes("#EXT-X-STREAM-INF:")) {
+                            console.log(request.url);
                             socket.send(request.url);
                         }
                     }
