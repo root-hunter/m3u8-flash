@@ -8,7 +8,7 @@ use std::{
 
 use aes::Aes128;
 use cbc::Decryptor;
-use cipher::{block_padding::Pkcs7, generic_array::GenericArray, BlockDecryptMut, KeyIvInit};
+use cipher::{block_padding::Pkcs7, BlockDecryptMut, KeyIvInit};
 use hex::decode;
 use regex::Regex;
 use reqwest;

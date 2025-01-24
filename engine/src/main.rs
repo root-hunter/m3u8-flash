@@ -1,8 +1,7 @@
 use serde_json;
 use m3u8_flash::m3u8::playlist::Playlist;
 use std::sync::Arc;
-use std::{fs::File, thread};
-use std::io::Write;
+use std::thread;
 
 // fn main() -> Result<(), Box<dyn std::error::Error>> {
 //     let url_lib = "https://vixcloud.co/playlist/279808?b=1&token=bc4c72db837a3144711bee4b01cc881c&expires=1742850942";

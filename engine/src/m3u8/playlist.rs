@@ -3,7 +3,7 @@ use reqwest;
 use serde::Serialize;
 use url::Url;
 
-use super::{media::{self, Media, MediaType}, stream::Stream};
+use super::{media::{Media, MediaType}, stream::Stream};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Playlist {
