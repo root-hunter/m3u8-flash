@@ -1,0 +1,6 @@
+*.pem
+*.crx
+.venv
+*.sqlite3
+migrations
+__pycache__

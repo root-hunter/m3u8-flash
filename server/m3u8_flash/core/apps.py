@@ -7,6 +7,7 @@ class CoreConfig(AppConfig):
     name = 'core'
 
     def ready(self):
-        socket = WebSocketClient(uri="ws://localhost:9999")
+        print("START SOCKET WS")
+        socket = WebSocketClient(uri="ws://engine:9999")
 
-        socket.send_message("https://vixcloud.co/playlist/279808?token=79d9ca5042f3905e61b5a46b6656651f&expires=1742863198&h=1")
+        #socket.send_message("https://vixcloud.co/playlist/194073?token=a745b3577ef3664c5ab38982917f65a1&expires=1743078396&h=1")

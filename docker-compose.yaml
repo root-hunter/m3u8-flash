@@ -1,0 +1,15 @@
+services:
+  engine:
+    image: m3u8-flash-engine:latest
+
+    volumes:
+      - ./generated:/generated
+    ports:
+      - 9999:9999
+  server:
+    image: m3u8-flash-server:latest
+
+    ports:
+      - 8000:8000
+    depends_on:
+      - engine

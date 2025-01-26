@@ -31,7 +31,7 @@ use tokio::sync::mpsc;
 
 #[tokio::main]
 async fn main() {
-    let addr = "127.0.0.1:9999".parse::<SocketAddr>().unwrap();
+    let addr = "0.0.0.0:9999".parse::<SocketAddr>().unwrap();
     let listener = TcpListener::bind(&addr).await.expect("Failed to bind");
 
     println!("WebSocket server in ascolto su ws://{}", addr);
@@ -76,7 +76,7 @@ async fn main() {
                             library.scan().unwrap();
                             let payload = serde_json::to_string_pretty(&library).unwrap();
                             //println!("{:?}", library);
-                            //library.playlists[1].save().unwrap();
+                            library.playlists[1].save().unwrap();
 
                             tx_clone.blocking_send(payload).expect("Errore nell'invio al canale");
                         });

@@ -191,7 +191,7 @@ impl Stream {
         let mut handles = vec![];
         let reg_temp_file = Regex::new(r"temp_(\d+).part").unwrap();
 
-        std::fs::create_dir(folder).unwrap();
+        std::fs::create_dir_all(folder).unwrap();
 
         let mut j: usize = 0;
         for chunk in chunks {

@@ -38,7 +38,8 @@ class WebSocketClient:
 
     def handle_message(self, message):
         """Gestisce i messaggi ricevuti (puoi personalizzarlo come necessario)"""
-        print(f"Elaborazione messaggio: {message}")
+        #print(f"Elaborazione messaggio: {message}")
+        pass
 
     def send_message(self, message):
         """Invia un messaggio al server WebSocket"""

@@ -19,5 +19,5 @@ tokio-tungstenite = "0.26.1"
 futures-util = "0.3"
 
 [[bin]]
-name = "m3u8-flash"
+name = "m3u8-flash-engine"
 path = "src/main.rs"
