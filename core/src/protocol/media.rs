@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use serde::Serialize;
 use url::Url;
 
@@ -38,9 +40,9 @@ impl Media {
         };
     }
 
-    pub fn save(self: &mut Self, uid: String) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn save(self: &mut Self, base_folder: &Path) -> Result<(), Box<dyn std::error::Error>> {
         let url = Url::parse(self.url.as_str()).unwrap();
-        let folder_path = format!("./generated/{}/audio/", uid);
+        let folder_path = base_folder.join("audio");
         let target_filename = "audio.ts".to_string();
  
         self.stream.url = url.to_string();
@@ -52,7 +54,7 @@ impl Media {
         );
 
         self.stream.scan().unwrap();
-        self.stream.save(folder_path, target_filename).unwrap();
+        self.stream.save(&folder_path, target_filename).unwrap();
         
         Ok(())
     }

@@ -1,9 +1,8 @@
 use std::{
     fs::{self, DirEntry, File, OpenOptions},
     io::{BufReader, BufWriter, Read, Write},
-    path,
+    path::{self, Path},
     sync::{Arc, Mutex},
-    time::{SystemTime, UNIX_EPOCH},
 };
 
 use aes::Aes128;
@@ -16,7 +15,7 @@ use serde::Serialize;
 use std::thread;
 use url::Url;
 
-use crate::{protocol::segment::Segment, output::export::convert_ts_to_mp4};
+use crate::protocol::segment::Segment;
 
 #[derive(Debug, Clone, Serialize)]
 pub enum StreamType {
@@ -189,8 +188,9 @@ impl Stream {
         Ok(())
     }
 
-    pub fn save(self: &mut Self, folder_path: String, target_filename: String) -> Result<(), Box<dyn std::error::Error>> {
-        let stream_folder = path::Path::new(folder_path.as_str());
+    pub fn save(self: &mut Self, folder_path: &Path, target_filename: String) -> Result<(), Box<dyn std::error::Error>> {
+        let stream_folder = folder_path;
+        println!("FOLDER: {:?}", folder_path);
         let base_folder = stream_folder.parent().unwrap();
 
         let target_file_path = base_folder.join(target_filename);
