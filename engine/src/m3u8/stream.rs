@@ -180,9 +180,13 @@ impl Stream {
     }
 
     pub fn save(self: &mut Self) -> Result<(), Box<dyn std::error::Error>> {
-        let now = SystemTime::now().duration_since(UNIX_EPOCH);
-        let folder_path = format!("./generated/{:?}", now.unwrap());
-        let folder = path::Path::new(folder_path.as_str());
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let folder_path = format!("./generated/{:?}/stream/", now);
+        let stream_folder = path::Path::new(folder_path.as_str());
+        
+        let export_folder_path = format!("./generated/{:?}/export/", now);
+        let export_folder = path::Path::new(export_folder_path.as_str());
+        
         let key = self.key.clone().unwrap();
 
         let segments = self.segments.clone();
@@ -191,11 +195,12 @@ impl Stream {
         let mut handles = vec![];
         let reg_temp_file = Regex::new(r"temp_(\d+).part").unwrap();
 
-        std::fs::create_dir_all(folder).unwrap();
+        std::fs::create_dir_all(stream_folder).unwrap();
+        std::fs::create_dir_all(export_folder).unwrap();
 
         let mut j: usize = 0;
         for chunk in chunks {
-            let file_path = folder.join(format!("temp_{}.part", j));
+            let file_path = stream_folder.join(format!("temp_{}.part", j));
             let file = OpenOptions::new()
                 .create(true) // Crea il file se non esiste
                 .append(true) // Aggiungi i dati invece di sovrascrivere
@@ -229,10 +234,10 @@ impl Stream {
         for handle in handles {
             handle.join().unwrap();
         }
-        let output_path = folder.join("output.ts");
+        let output_path = stream_folder.join("output.ts");
         let mut output = BufWriter::new(File::create(output_path.clone())?);
 
-        let mut files: Vec<_> = fs::read_dir(folder)?
+        let mut files: Vec<_> = fs::read_dir(stream_folder)?
             .filter_map(|entry| entry.ok())
             .filter(|e| {
                 let file_path = e.path();
@@ -267,9 +272,10 @@ impl Stream {
         output.flush()?; // Assicura che tutti i dati siano scritti
 
         let output_path = output_path.to_str().unwrap();
-        let final_path = output_path.replace("ts", "mp4");
+        let final_path = export_folder.join("output.mp4");
+        let final_path = final_path.to_str().unwrap();
 
-        match convert_ts_to_mp4(output_path, final_path.as_str()) {
+        match convert_ts_to_mp4(output_path, final_path) {
             Ok(_) => println!("Conversione completata con successo."),
             Err(e) => eprintln!("Errore durante la conversione: {}", e),
         }

@@ -1,9 +1,11 @@
 docker-build:
-	docker build -t m3u8-flash-engine ./engine
-	docker build -t m3u8-flash-server ./server
+	./scripts/build.sh
 
 docker-up: docker-build
 	docker compose up
+
+docker-start:
+	./scripts/start.sh
 
 engine-start:
 	cd engine; cargo run

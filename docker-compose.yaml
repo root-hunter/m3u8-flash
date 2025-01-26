@@ -3,7 +3,7 @@ services:
     image: m3u8-flash-engine:latest
 
     volumes:
-      - ./generated:/generated
+      - generated_data:/generated
     ports:
       - 9999:9999
   server:
@@ -13,3 +13,11 @@ services:
       - 8000:8000
     depends_on:
       - engine
+
+volumes:
+  generated_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./generated
+      o: bind
