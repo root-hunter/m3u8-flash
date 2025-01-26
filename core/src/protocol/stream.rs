@@ -16,7 +16,7 @@ use serde::Serialize;
 use std::thread;
 use url::Url;
 
-use crate::{m3u8::segment::Segment, output::export::convert_ts_to_mp4};
+use crate::{protocol::segment::Segment, output::export::convert_ts_to_mp4};
 
 #[derive(Debug, Clone, Serialize)]
 pub enum StreamType {
@@ -60,6 +60,8 @@ impl StreamKey {
 pub struct Stream {
     pub url: String,
     pub base_url: String,
+    pub output_path: String,
+
     pub bandwidth: usize,
     pub codecs: String,
     pub resolution: String,
@@ -75,6 +77,7 @@ impl Stream {
         return Stream {
             base_url: String::new(),
             url: String::new(),
+            output_path: String::new(),
             _type: StreamType::EVENT,
             target_duration: 0,
             version: 0,
@@ -85,6 +88,13 @@ impl Stream {
             segments: Vec::new(),
         };
     }
+
+    pub fn scan_url(self: &mut Self, url: String) -> Result<(), Box<dyn std::error::Error>> {
+        self.url = url;
+
+        return  self.scan();
+    }
+
     pub fn scan(self: &mut Self) -> Result<(), Box<dyn std::error::Error>> {
         let reg_m3u8_file_start = Regex::new(r"#EXTM3U").unwrap();
         let reg_m3u8_version = Regex::new(r"#EXT-X-VERSION:(\d{1,})").unwrap();
@@ -179,14 +189,12 @@ impl Stream {
         Ok(())
     }
 
-    pub fn save(self: &mut Self) -> Result<(), Box<dyn std::error::Error>> {
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-        let folder_path = format!("./generated/{:?}/stream/", now);
+    pub fn save(self: &mut Self, folder_path: String, target_filename: String) -> Result<(), Box<dyn std::error::Error>> {
         let stream_folder = path::Path::new(folder_path.as_str());
-        
-        let export_folder_path = format!("./generated/{:?}/export/", now);
-        let export_folder = path::Path::new(export_folder_path.as_str());
-        
+        let base_folder = stream_folder.parent().unwrap();
+
+        let target_file_path = base_folder.join(target_filename);
+
         let key = self.key.clone().unwrap();
 
         let segments = self.segments.clone();
@@ -196,7 +204,6 @@ impl Stream {
         let reg_temp_file = Regex::new(r"temp_(\d+).part").unwrap();
 
         std::fs::create_dir_all(stream_folder).unwrap();
-        std::fs::create_dir_all(export_folder).unwrap();
 
         let mut j: usize = 0;
         for chunk in chunks {
@@ -234,8 +241,9 @@ impl Stream {
         for handle in handles {
             handle.join().unwrap();
         }
-        let output_path = stream_folder.join("output.ts");
-        let mut output = BufWriter::new(File::create(output_path.clone())?);
+        let mut output = BufWriter::new(File::create(target_file_path.clone())?);
+
+        self.output_path = target_file_path.to_str().unwrap().to_string();
 
         let mut files: Vec<_> = fs::read_dir(stream_folder)?
             .filter_map(|entry| entry.ok())
@@ -266,22 +274,11 @@ impl Stream {
             input.read_to_end(&mut buffer).unwrap();
             output.write_all(&buffer).unwrap();
             std::fs::remove_file(file_path).unwrap();
-
         }
 
-        output.flush()?; // Assicura che tutti i dati siano scritti
+        output.flush().unwrap();
+        std::fs::remove_dir_all(stream_folder).unwrap();
 
-        let output_path = output_path.to_str().unwrap();
-        let final_path = export_folder.join("output.mp4");
-        let final_path = final_path.to_str().unwrap();
-
-        match convert_ts_to_mp4(output_path, final_path) {
-            Ok(_) => println!("Conversione completata con successo."),
-            Err(e) => eprintln!("Errore durante la conversione: {}", e),
-        }
-        std::fs::remove_file(output_path).unwrap();
-
-        println!("ALL FINISH");
         Ok(())
     }
 }

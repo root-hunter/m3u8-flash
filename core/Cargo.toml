@@ -1,17 +1,18 @@
 [package]
-name = "m3u8-flash-engine"
+name = "m3u8-flash-core"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-m3u8-flash-core ={ path = "../core" }
+regex = "1.11.1"
+reqwest = { version = "0.12.12" , features = ["blocking"]}
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+hex = "0.4"
 url = "2.5"
+aes = "0.8"
+cbc = "0.1"
+cipher = { version = "0.4", features = ["block-padding", "std"] }
 tokio = { version = "1", features = ["full"] }
 tokio-tungstenite = "0.26.1"
 futures-util = "0.3"
-
-[[bin]]
-name = "m3u8-flash-engine"
-path = "src/main.rs"

@@ -1,33 +1,15 @@
+use m3u8_flash_core::output::export::Export;
+use m3u8_flash_core::protocol::playlist::Playlist;
 use serde_json;
-use m3u8_flash::m3u8::playlist::Playlist;
 use std::sync::Arc;
 use std::thread;
+use std::time::{SystemTime, UNIX_EPOCH};
 
-// fn main() -> Result<(), Box<dyn std::error::Error>> {
-//     let url_lib = "https://vixcloud.co/playlist/279808?b=1&token=bc4c72db837a3144711bee4b01cc881c&expires=1742850942";
-//     //Library::new(url);
-//     let mut library = Library::new(url_lib.to_string());
-//     library.scan().unwrap();
-
-//     //println!("{:#?}", library);
-
-//     // Serializza la struct in formato JSON
-//     let json_string = serde_json::to_string_pretty(&library).unwrap();
-
-//     // Salva il JSON in un file
-//     let mut file = File::create("library.json")?;
-//     file.write_all(json_string.as_bytes())?;
-
-//     library.playlists[1].save().unwrap();
-//     Ok(())
-// }
-
-
-use tokio::net::TcpListener;
-use tokio_tungstenite::accept_async;
-use futures_util::{StreamExt, SinkExt};
+use futures_util::{SinkExt, StreamExt};
 use std::net::SocketAddr;
+use tokio::net::TcpListener;
 use tokio::sync::mpsc;
+use tokio_tungstenite::accept_async;
 
 #[tokio::main]
 async fn main() {
@@ -38,14 +20,14 @@ async fn main() {
 
     while let Ok((stream, _)) = listener.accept().await {
         tokio::spawn(async move {
-            let ws_stream = accept_async(stream).await.expect("Errore durante handshake");
+            let ws_stream = accept_async(stream)
+                .await
+                .expect("Errore durante handshake");
 
             println!("Nuova connessione WebSocket accettata");
 
             // Creiamo un canale per inviare messaggi tra il thread e Tokio
             let (tx, mut rx) = mpsc::channel::<String>(32);
-
-            
 
             let (mut write, mut read) = ws_stream.split();
 
@@ -64,21 +46,50 @@ async fn main() {
                 match msg {
                     Ok(msg) if msg.is_text() || msg.is_binary() => {
                         let data = msg.to_text().unwrap();
-                        let url = Arc::new(data.to_string());  // Usa Arc per garantire sicurezza nel thread
-                    
+                        let url = Arc::new(data.to_string()); // Usa Arc per garantire sicurezza nel thread
+
                         println!("Messaggio ricevuto: {}", url);
 
                         let url_clone = Arc::clone(&url);
                         let tx_clone = tx.clone();
 
                         thread::spawn(move || {
+                            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                            let uid = now.as_millis().to_string();
+
                             let mut library = Playlist::new(url_clone.to_string());
                             library.scan().unwrap();
-                            let payload = serde_json::to_string_pretty(&library).unwrap();
-                            //println!("{:?}", library);
-                            library.playlists[1].save().unwrap();
 
-                            tx_clone.blocking_send(payload).expect("Errore nell'invio al canale");
+                            let payload = serde_json::to_string_pretty(&library).unwrap();
+
+                            let mut video = library.playlists[1].clone();
+                            let folder_path = format!("./generated/{}/stream/", uid);
+                            
+                            let mut audio = None;
+
+                            if library.audios.len() > 0 {
+                                audio = Some(library.audios[0].clone());
+                            }
+
+                            println!("Audio: {:?}", audio);
+                            let target_filename = "video.ts".to_string();
+                            video.save(folder_path, target_filename).unwrap();
+                            
+                            if audio.is_some() {
+                                let mut audio = audio.clone().unwrap();
+                                audio.save(uid.clone()).unwrap();
+                            }
+
+                            let mut export = Export {
+                                video: video,
+                                audio: audio,
+                            };
+
+                            export.save(uid).unwrap();
+
+                            tx_clone
+                                .blocking_send(payload)
+                                .expect("Errore nell'invio al canale");
                         });
                     }
                     Ok(_) => break,
