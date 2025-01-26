@@ -30,7 +30,6 @@ chrome.webRequest.onCompleted.addListener(
             request.statusCode === 200
             && request.method === "GET"
             && request.type === "xmlhttprequest"
-            && request.initiator === "https://vixcloud.co"
         ) {
             const url = request.url;
             fetch(url)
