@@ -103,7 +103,6 @@ impl Stream {
         let reg_m3u8_seg_http = Regex::new(r"http").unwrap();
         let reg_m3u8_key = Regex::new(r"#EXT-X-KEY:").unwrap();
 
-        println!("{}", self.url);
         let response = reqwest::blocking::get(self.url.clone())?.text()?;
 
         let rows = response.split('\n');

@@ -40,11 +40,9 @@ impl Media {
         };
     }
 
-    pub fn save(self: &mut Self, base_folder: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn scan(self: &mut Self) -> Result<(), Box<dyn std::error::Error>> {
         let url = Url::parse(self.url.as_str()).unwrap();
-        let folder_path = base_folder.join("audio");
-        let target_filename = "audio.ts".to_string();
- 
+  
         self.stream.url = url.to_string();
         self.stream.base_url = format!(
             "{}://{}{}",
@@ -54,8 +52,17 @@ impl Media {
         );
 
         self.stream.scan().unwrap();
-        self.stream.save(&folder_path, target_filename).unwrap();
+
+        Ok(())
+    }
+
+    pub fn save(self: &mut Self, base_folder: &Path) -> Result<(), Box<dyn std::error::Error>> {
+        let folder_path = base_folder.join("audio");
+        let target_filename = "audio.ts".to_string();
         
+        self.stream.save(&folder_path, target_filename.clone()).unwrap();
+        self.stream.output_path = base_folder.join(target_filename).to_str().unwrap().into();
+
         Ok(())
     }
 }

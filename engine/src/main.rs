@@ -58,19 +58,19 @@ async fn main() {
                             let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
                             let uid = now.as_millis().to_string();
 
-                            let mut library = Playlist::new(playlist_url_clone.to_string());
-                            library.scan().unwrap();
+                            let mut playlist = Playlist::new(playlist_url_clone.to_string());
+                            playlist.scan().unwrap();
 
-                            let payload = serde_json::to_string_pretty(&library).unwrap();
+                            let payload = serde_json::to_string_pretty(&playlist).unwrap();
                             let output_base_path = Path::new("./generated");
 
-                            let mut video = library.playlists[1].clone();
+                            let mut video = playlist.playlists[1].clone();
                             let folder_path = output_base_path.join("video");
                             
                             let mut audio = None;
 
-                            if library.audios.len() > 0 {
-                                audio = Some(library.audios[0].clone());
+                            if playlist.audios.len() > 0 {
+                                audio = Some(playlist.audios[0].clone());
                             }
 
                             println!("Audio: {:?}", audio);
@@ -83,8 +83,8 @@ async fn main() {
                             }
 
                             let mut export = Export {
-                                video: video,
-                                audio: audio,
+                                video,
+                                audio,
                             };
 
                             let target_file = output_base_path.join(format!("{:?}.mp4", now));

@@ -89,12 +89,13 @@ impl Playlist {
                     }
                 }
 
+                media.scan().unwrap();
+
                 if media._type == MediaType::Audio {
                     self.audios.push(media.clone());
                 } else if media._type == MediaType::Subtitles {
                     self.subtitles.push(media.clone());
                 }
-
             } else if reg_m3u8_stream.is_match(row) {
                 let parts: Vec<&str> = row.split(':').collect();
                 let parts: Vec<&str> = parts[1].split(',').collect();

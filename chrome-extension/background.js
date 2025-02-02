@@ -1,4 +1,5 @@
 const decoder = new TextDecoder("utf-8");
+const M3U8_PLAYLISTS_KEY = "items";
 let socket = new WebSocket("ws://127.0.0.1:9999");
 
 const initSocket = () => {
@@ -12,7 +13,6 @@ const initSocket = () => {
         console.error("Errore WebSocket:", error);
     };
 }
-
 
 const getStorage = async (key, defaultValue) => {
     return new Promise((resolve) => {
@@ -55,9 +55,6 @@ const updateBadge = async () => {
     }
 }
 
-
-const M3U8_PLAYLISTS_KEY = "items";
-
 chrome.webRequest.onCompleted.addListener(
     async (request) => {
         if (
@@ -76,13 +73,11 @@ chrome.webRequest.onCompleted.addListener(
                     const data = await response.arrayBuffer();
                     const buffer = data.slice(0, 7);
                     const prefix = decoder.decode(buffer);
-                    badgeCount = items.length;
 
                     if (prefix === "#EXTM3U") {
                         const file = decoder.decode(data);
 
                         if (file.includes("#EXT-X-STREAM-INF:")) {
-                            // socket.send(request.url);
                             chrome.tabs.query({ active: true, currentWindow: true }, async function (tabs) {
                                 const uid = crypto.randomUUID();
                                 const streamUrl = url.substring(0, url.lastIndexOf("/"));
@@ -99,7 +94,7 @@ chrome.webRequest.onCompleted.addListener(
                                 };
 
                                 await setStorage(M3U8_PLAYLISTS_KEY, items);
-
+                                
                                 console.log(items);
                                 console.log("Link saved");
                             });
@@ -115,6 +110,18 @@ chrome.webRequest.onCompleted.addListener(
     { urls: ["<all_urls>"], types: ["xmlhttprequest"] }
 );
 
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+    if (message.type === "parsePlaylist") {
+        const items = await getStorage("items", {});
+        const item = items[message.uid];
+
+        if(item) {
+            socket.send(item.url);
+            console.log("Message sended");
+            sendResponse({ status: "Badge aggiornato!" });
+        }
+    }
+});
 
 setInterval(async () => {
     if (socket.readyState === WebSocket.CLOSED) {
@@ -130,7 +137,7 @@ setInterval(async () => {
             console.log(e);
         }
     }
-}, 3000)
+}, 3000);
 
 setInterval(async () => {
     await updateBadge();
