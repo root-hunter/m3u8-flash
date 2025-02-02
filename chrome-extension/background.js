@@ -46,7 +46,7 @@ const updateBadge = async () => {
     const items = await getStorage("items", {});
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
 
-    if(tabs[0]) {
+    if (tabs[0]) {
         console.log(tabs)
         const count = Object.values(items).filter(e => e.tab_id === tabs[0].id).length;
         await chrome.action.setBadgeText({ text: count > 0 ? count.toString() : "" });
@@ -64,7 +64,7 @@ chrome.webRequest.onCompleted.addListener(
         ) {
             const url = request.url;
             const items = await getStorage(M3U8_PLAYLISTS_KEY, {});
-            
+
             const keys = Object.keys(items);
 
             if (!keys.some(k => items[k].url === url)) {
@@ -94,7 +94,7 @@ chrome.webRequest.onCompleted.addListener(
                                 };
 
                                 await setStorage(M3U8_PLAYLISTS_KEY, items);
-                                
+
                                 console.log(items);
                                 console.log("Link saved");
                             });
@@ -115,8 +115,20 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         const items = await getStorage("items", {});
         const item = items[message.uid];
 
-        if(item) {
-            socket.send(item.url);
+        if (item) {
+            //socket.send(item.url);
+
+            socket.send(JSON.stringify({
+                type: "Command",
+                data: {
+                    command_type: "StartExport",
+                    payload: {
+                        uid: item.uid,
+                        url: item.url
+                    }
+                }
+            }));
+
             console.log("Message sended");
             sendResponse({ status: "Badge aggiornato!" });
         }
@@ -129,8 +141,6 @@ setInterval(async () => {
             socket = new WebSocket("ws://127.0.0.1:9999");
             socket.onopen = async () => {
                 console.log("Connection recreated");
-                await clearStorage();
-                await removeStorageItem(M3U8_PLAYLISTS_KEY)
                 initSocket();
             }
         } catch (e) {

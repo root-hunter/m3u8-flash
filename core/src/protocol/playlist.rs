@@ -7,6 +7,7 @@ use super::{media::{Media, MediaType}, stream::Stream};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Playlist {
+    pub uid: String,
     pub url: String,
     pub audios: Vec<Media>,
     pub subtitles: Vec<Media>,
@@ -14,8 +15,9 @@ pub struct Playlist {
 }
 
 impl Playlist {
-    pub fn new(url: String) -> Self {
+    pub fn new(uid: String, url: String) -> Self {
         return Playlist {
+            uid: uid,
             url: url,
             audios: Vec::new(),
             subtitles: Vec::new(),
@@ -92,8 +94,10 @@ impl Playlist {
                 media.scan().unwrap();
 
                 if media._type == MediaType::Audio {
+                    media.stream.output_path = "./generated/audio.ts".into();
                     self.audios.push(media.clone());
                 } else if media._type == MediaType::Subtitles {
+                    media.stream.output_path = "./generated/subtitle.ts".into();
                     self.subtitles.push(media.clone());
                 }
             } else if reg_m3u8_stream.is_match(row) {
@@ -121,6 +125,7 @@ impl Playlist {
                     url.port().map_or("".to_string(), |p| format!(":{}", p))
                 );
                 stream.scan().unwrap();
+                stream.output_path = "./generated/video.ts".into();
                 self.playlists.push(stream.clone());
 
                 stream = Stream::new();

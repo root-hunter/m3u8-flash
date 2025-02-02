@@ -35,11 +35,12 @@ impl Export {
 
         if self.audio.is_some() {
             let audio = self.audio.clone().unwrap();
+            println!("{:?}", audio);
             audio_path = Some(audio.stream.output_path);
             
             params.push("-i".into());
-            //params.push(audio_path.clone().unwrap().into());
-            params.push("./generated/audio.ts".into());
+            params.push(audio_path.clone().unwrap().into());
+            //params.push("./generated/audio.ts".into());
         }
 
         params.push("-c:v".into());
@@ -71,8 +72,6 @@ impl Export {
         if audio_path.is_some() {
             std::fs::remove_file(audio_path.unwrap()).unwrap();
         }
-
-        println!("ALL FINISH");
 
         Ok(())
     }

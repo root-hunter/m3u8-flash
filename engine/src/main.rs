@@ -1,5 +1,6 @@
 use m3u8_flash_core::output::export::Export;
 use m3u8_flash_core::protocol::playlist::Playlist;
+use serde::Deserialize;
 use serde_json;
 use std::path::Path;
 use std::sync::Arc;
@@ -11,6 +12,10 @@ use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use tokio_tungstenite::accept_async;
+
+const OUTPUT_DIR_PATH: &str = "./generated";
+
+use m3u8_flash_engine::protocol::Message;
 
 #[tokio::main]
 async fn main() {
@@ -47,53 +52,77 @@ async fn main() {
                 match msg {
                     Ok(msg) if msg.is_text() || msg.is_binary() => {
                         let data = msg.to_text().unwrap();
-                        let playlist_url = Arc::new(data.to_string()); // Usa Arc per garantire sicurezza nel thread
+                        println!("JSON = {}", data);
+                        let message: Message = serde_json::from_str(&data).unwrap();
+                        println!("Messaggio ricevuto: {:?}", message);
 
-                        println!("Messaggio ricevuto: {}", playlist_url);
+                        let message_arc = Arc::new(message);
 
-                        let playlist_url_clone = Arc::clone(&playlist_url);
+                        //let playlist_url = Arc::new(data.to_string());
+
+
+                        //let playlist_url_clone = Arc::clone(&playlist_url);
+                        let message_clone = Arc::clone(&message_arc);
+                        
                         let tx_clone = tx.clone();
 
                         thread::spawn(move || {
+                            let output_base_path = Path::new(OUTPUT_DIR_PATH);
                             let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                            let uid = now.as_millis().to_string();
+                            let uid: String = now.as_millis().to_string();
 
-                            let mut playlist = Playlist::new(playlist_url_clone.to_string());
-                            playlist.scan().unwrap();
+                            let message = message_clone.clone();
 
-                            let payload = serde_json::to_string_pretty(&playlist).unwrap();
-                            let output_base_path = Path::new("./generated");
-
-                            let mut video = playlist.playlists[1].clone();
-                            let folder_path = output_base_path.join("video");
-                            
-                            let mut audio = None;
-
-                            if playlist.audios.len() > 0 {
-                                audio = Some(playlist.audios[0].clone());
+                            match message.as_ref() {
+                                Message::Ping => todo!(),
+                                Message::Pong => todo!(),
+                                Message::Text { text } => todo!(),
+                                Message::Command(command_data) => {
+                                    match command_data {
+                                        m3u8_flash_engine::protocol::CommandData::StartExport { uid, url } => {
+                                            let mut playlist = Playlist::new(uid.clone(), url.clone());
+                                            playlist.scan().unwrap();
+                
+                                            let payload = serde_json::to_string_pretty(&playlist).unwrap();
+                
+                                            let mut video = playlist.playlists[0].clone();
+                                            let folder_path = output_base_path.join("video");
+                                            
+                                            let mut audio = None;
+                
+                                            if playlist.audios.len() > 0 {
+                                                audio = Some(playlist.audios[0].clone());
+                                            }
+                
+                                            let target_filename = "video.ts".to_string();
+                                            println!("Video output_path 1: {:?}", video.output_path);
+                                            video.save(&folder_path, target_filename).unwrap();
+                                            println!("Video output_path 2: {:?}", video.output_path);
+                                            
+                                            if audio.is_some() {
+                                                let mut audio = audio.clone().unwrap();
+                                                println!("Audio output_path 1: {:?}", audio.stream.output_path);
+                                                audio.save(output_base_path).unwrap();
+                                                println!("Audio output_path 2: {:?}", audio.stream.output_path);
+                                            }
+                
+                                            let mut export = Export {
+                                                video,
+                                                audio,
+                                            };
+                
+                                            let target_file = output_base_path.join(format!("{:?}.mp4", now));
+                
+                                            export.save(&target_file).unwrap();
+                
+                                            tx_clone
+                                                .blocking_send(payload)
+                                                .expect("Errore nell'invio al canale");
+                                        },
+                                    }
+                                },
                             }
 
-                            println!("Audio: {:?}", audio);
-                            let target_filename = "video.ts".to_string();
-                            video.save(&folder_path, target_filename).unwrap();
-                            
-                            if audio.is_some() {
-                                let mut audio = audio.clone().unwrap();
-                                audio.save(output_base_path).unwrap();
-                            }
-
-                            let mut export = Export {
-                                video,
-                                audio,
-                            };
-
-                            let target_file = output_base_path.join(format!("{:?}.mp4", now));
-
-                            export.save(&target_file).unwrap();
-
-                            tx_clone
-                                .blocking_send(payload)
-                                .expect("Errore nell'invio al canale");
                         });
                     }
                     Ok(_) => break,
