@@ -45,8 +45,6 @@ impl Playlist {
                 
                 let mut media = Media::new();
 
-                println!("{:#?}", row);
-                println!("{:#?}", parts);
                 for part in parts {
                     let tmp = part.split_once('=').unwrap();
                     

@@ -2,17 +2,8 @@ const decoder = new TextDecoder("utf-8");
 let socket = new WebSocket("ws://127.0.0.1:9999");
 
 const initSocket = () => {
-    socket.onopen = () => {
-        console.log("Connesso al server WebSocket");
-    };
     socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-
-        chrome.storage.local.set({ [`playlist_${Date.now()}`]: data }, function() {
-            console.log('Dati salvati correttamente!');
-        });
-
-        console.log(data);
     };
     socket.onclose = () => {
         console.log("Connessione chiusa dal server");
@@ -22,49 +13,125 @@ const initSocket = () => {
     };
 }
 
-initSocket();
+
+const getStorage = async (key, defaultValue) => {
+    return new Promise((resolve) => {
+        chrome.storage.local.get({ [key]: defaultValue }, (data) => {
+            resolve(data[key]);
+        });
+    });
+};
+
+const setStorage = async (key, value) => {
+    return new Promise((resolve) => {
+        chrome.storage.local.set({ [key]: value }, () => {
+            resolve();
+        });
+    });
+};
+
+const removeStorageItem = async (key) => {
+    return new Promise((resolve) => {
+        chrome.storage.local.remove(key, () => resolve());
+    });
+};
+
+const clearStorage = async () => {
+    return new Promise((resolve) => {
+        chrome.storage.local.clear(() => resolve());
+    });
+};
+
+const updateBadge = async () => {
+    const items = await getStorage("items", {});
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    if(tabs[0]) {
+        console.log(tabs)
+        const count = Object.values(items).filter(e => e.tab_id === tabs[0].id).length;
+        await chrome.action.setBadgeText({ text: count > 0 ? count.toString() : "" });
+    } else {
+        await chrome.action.setBadgeText({ text: "" });
+    }
+}
+
+
+const M3U8_PLAYLISTS_KEY = "items";
 
 chrome.webRequest.onCompleted.addListener(
-    function (request) {
+    async (request) => {
         if (
-            request.statusCode === 200
-            && request.method === "GET"
-            && request.type === "xmlhttprequest"
+            request.statusCode === 200 &&
+            request.method === "GET" &&
+            request.type === "xmlhttprequest"
         ) {
             const url = request.url;
-            fetch(url)
-                .then(async (response) => {
+            const items = await getStorage(M3U8_PLAYLISTS_KEY, {});
+            
+            const keys = Object.keys(items);
+
+            if (!keys.some(k => items[k].url === url)) {
+                try {
+                    const response = await fetch(url);
                     const data = await response.arrayBuffer();
                     const buffer = data.slice(0, 7);
                     const prefix = decoder.decode(buffer);
+                    badgeCount = items.length;
 
                     if (prefix === "#EXTM3U") {
                         const file = decoder.decode(data);
 
                         if (file.includes("#EXT-X-STREAM-INF:")) {
-                            console.log(request.url);
-                            socket.send(request.url);
+                            // socket.send(request.url);
+                            chrome.tabs.query({ active: true, currentWindow: true }, async function (tabs) {
+                                const uid = crypto.randomUUID();
+                                const streamUrl = url.substring(0, url.lastIndexOf("/"));
+                                const pageTitle = tabs[0] ? tabs[0].title : 'No title available';
+                                const tabId = tabs[0] ? tabs[0].id : null;
+
+                                items[uid] = {
+                                    uid: uid,
+                                    url: url,
+                                    page_url: request.url,
+                                    stream_url: streamUrl,
+                                    title: pageTitle,
+                                    tab_id: tabId
+                                };
+
+                                await setStorage(M3U8_PLAYLISTS_KEY, items);
+
+                                console.log(items);
+                                console.log("Link saved");
+                            });
+
                         }
                     }
-                }).catch((e) => {
-                    console.log(e)
-                })
+                } catch (e) {
+                    console.error(e);
+                }
+            }
         }
     },
-    { urls: ["<all_urls>"], types: ["xmlhttprequest"] },  // Monitora tutte le richieste
-)
+    { urls: ["<all_urls>"], types: ["xmlhttprequest"] }
+);
 
 
-setInterval(() => {
+setInterval(async () => {
     if (socket.readyState === WebSocket.CLOSED) {
         try {
             socket = new WebSocket("ws://127.0.0.1:9999");
-            if (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN) {
+            socket.onopen = async () => {
                 console.log("Connection recreated");
+                await clearStorage();
+                await removeStorageItem(M3U8_PLAYLISTS_KEY)
                 initSocket();
             }
         } catch (e) {
-            //console.log(e);
+            console.log(e);
         }
     }
 }, 3000)
+
+setInterval(async () => {
+    await updateBadge();
+}, 500);

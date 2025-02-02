@@ -1,0 +1,35 @@
+/* popup.css */
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 10px;
+  width: 500px; /* Imposta una larghezza massima */
+  overflow: auto; /* Abilita lo scroll quando il contenuto è troppo lungo */
+  box-sizing: border-box;
+}
+
+.list-group-item {
+  word-wrap: break-word; /* Permette alle parole di andare a capo se troppo lunghe */
+  white-space: normal; /* Garantisce che il testo non si sovrapponga */
+}
+
+.text-truncate {
+  text-overflow: ellipsis; /* Aggiungi i puntini di sospensione se il testo è troppo lungo */
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+ul {
+  padding-left: 0; /* Rimuove il padding predefinito */
+  margin: 0;
+}
+
+@media (max-width: 500px) {
+  body {
+      font-size: 14px; /* Riduce la dimensione del testo sui dispositivi più piccoli */
+  }
+
+  .list-group-item {
+      font-size: 14px;
+  }
+}

@@ -8,10 +8,10 @@
     ],
     "permissions": [
         "tabs",
+        "activeTab",
         "webRequest",
         "webRequestBlocking",
         "storage",
-        "activeTab",
         "<all_urls>"
     ],
     "background": {

@@ -131,7 +131,6 @@ impl Stream {
 
                     if parts[1] == "VOD" {
                         self._type = StreamType::VOD;
-                        println!("{:#?}", self);
                     } else if parts[1] == "EVENT" {
                         self._type = StreamType::EVENT;
                     } else {
@@ -190,7 +189,6 @@ impl Stream {
 
     pub fn save(self: &mut Self, folder_path: &Path, target_filename: String) -> Result<(), Box<dyn std::error::Error>> {
         let stream_folder = folder_path;
-        println!("FOLDER: {:?}", folder_path);
         let base_folder = stream_folder.parent().unwrap();
 
         let target_file_path = base_folder.join(target_filename);
@@ -267,7 +265,6 @@ impl Stream {
         let files: Vec<&DirEntry> = files.iter().collect();
         for file in files {
             let file_path = file.path();
-            println!("{:?}", file_path.as_os_str());
 
             let mut input = BufReader::new(File::open(&file_path)?);
             let mut buffer = Vec::new();
